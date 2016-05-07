@@ -125,35 +125,56 @@ streznik.get('/kosarica', function(zahteva, odgovor) {
 })
 
 // Vrni podrobnosti pesmi na računu
-var pesmiIzRacuna = function(racunId, callback) {
-    pb.all("SELECT Track.TrackId AS stevilkaArtikla, 1 AS kolicina, \
-    Track.Name || ' (' || Artist.Name || ')' AS opisArtikla, \
-    Track.UnitPrice * " + razmerje_usd_eur + " AS cena, 0 AS popust, \
-    Genre.Name AS zanr \
-    FROM Track, Album, Artist, Genre \
-    WHERE Track.AlbumId = Album.AlbumId AND \
-    Artist.ArtistId = Album.ArtistId AND \
-    Track.GenreId = Genre.GenreId AND \
-    Track.TrackId IN (SELECT InvoiceLine.TrackId FROM InvoiceLine, Invoice \
-    WHERE InvoiceLine.InvoiceId = Invoice.InvoiceId AND Invoice.InvoiceId = " + racunId + ")",
-    function(napaka, vrstice) {
-      console.log(vrstice);
-    })
+var pesmiIzRacuna = function (racunId, callback) {
+	pb.all("SELECT Track.TrackId AS stevilkaArtikla, 1 AS kolicina, Track.Name || ' (' || Artist.Name || ')' AS opisArtikla, Track.UnitPrice * " + razmerje_usd_eur + " AS cena, 0 AS popust, Genre.Name AS zanr FROM Track, Album, Artist, Genre WHERE Track.AlbumId = Album.AlbumId AND Artist.ArtistId = Album.ArtistId AND Track.GenreId = Genre.GenreId AND Track.TrackId IN (SELECT InvoiceLine.TrackId FROM InvoiceLine, Invoice WHERE InvoiceLine.InvoiceId = Invoice.InvoiceId AND Invoice.InvoiceId = " + racunId + ")",
+    function (napaka, vrstice) {
+		if (!napaka) {
+			console.log(vrstice);
+			callback(vrstice);
+		} else {
+			callback(false);
+		}
+
+	})
 }
 
 // Vrni podrobnosti o stranki iz računa
-var strankaIzRacuna = function(racunId, callback) {
-    pb.all("SELECT Customer.* FROM Customer, Invoice \
-            WHERE Customer.CustomerId = Invoice.CustomerId AND Invoice.InvoiceId = " + racunId,
-    function(napaka, vrstice) {
-      console.log(vrstice);
-    })
+var strankaIzRacuna = function (racunId, callback) {
+	pb.all("SELECT Customer.* FROM Customer, Invoice WHERE Customer.CustomerId = Invoice.CustomerId AND Invoice.InvoiceId = " + racunId,
+	function (napaka, vrstice) {
+		if (!napaka) {
+			console.log(vrstice);
+			callback(vrstice);
+		} else {
+			callback(false);
+		}
+
+	})
 }
 
 // Izpis računa v HTML predstavitvi na podlagi podatkov iz baze
-streznik.post('/izpisiRacunBaza', function(zahteva, odgovor) {
-  odgovor.end();
-})
+streznik.post('/izpisiRacunBaza', function (zahteva, odgovor) {
+	var form = new formidable.IncomingForm();
+	form.parse(zahteva, function (napaka1, polja, datoteke) {
+
+		console.log("ID: " + polja.seznamRacunov + "type: " + typeof (polja.seznamRacunov));
+
+		var InvoiceID = parseInt(polja.seznamRacunov);
+		console.log("ID: " + InvoiceID + "type: " + typeof (InvoiceID));
+
+		pesmiIzRacuna(InvoiceID, function (pesmi) {
+			strankaIzRacuna(InvoiceID, function (stranka) {
+				console.log(stranka);
+				odgovor.setHeader('content-type', 'text/xml');
+				odgovor.render('eslog', {
+					Stranka: stranka,
+					vizualiziraj: true,
+					postavkeRacuna: pesmi
+				});
+			});
+		});
+	});
+});
 
 // Izpis računa v HTML predstavitvi ali izvorni XML obliki
 streznik.get('/izpisiRacun/:oblika', function(zahteva, odgovor) {
@@ -161,8 +182,7 @@ streznik.get('/izpisiRacun/:oblika', function(zahteva, odgovor) {
     if (!pesmi) {
       odgovor.sendStatus(500);
     } else if (pesmi.length == 0) {
-      odgovor.send("<p>V košarici nimate nobene pesmi, \
-        zato računa ni mogoče pripraviti!</p>");
+      odgovor.send("<p>V košarici nimate nobene pesmi, zato računa ni mogoče pripraviti!</p>");
     } else {
       odgovor.setHeader('content-type', 'text/xml');
       odgovor.render('eslog', {
