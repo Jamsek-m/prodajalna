@@ -27,6 +27,7 @@ streznik.use(
 );
 
 var razmerje_usd_eur = 0.877039116;
+var prijavljen = false;
 
 function davcnaStopnja(izvajalec, zanr) {
   switch (izvajalec) {
@@ -46,8 +47,11 @@ function davcnaStopnja(izvajalec, zanr) {
 }
 
 // Prikaz seznama pesmi na strani
-streznik.get('/', function(zahteva, odgovor) {
-  pb.all("SELECT Track.TrackId AS id, Track.Name AS pesem, \
+streznik.get('/', function (zahteva, odgovor) {
+	if (!zahteva.session.prijavljen) {
+		odgovor.redirect('/prijava');
+	}
+	pb.all("SELECT Track.TrackId AS id, Track.Name AS pesem, \
           Artist.Name AS izvajalec, Track.UnitPrice * " +
           razmerje_usd_eur + " AS cena, \
           COUNT(InvoiceLine.InvoiceId) AS steviloProdaj, \
@@ -65,7 +69,7 @@ streznik.get('/', function(zahteva, odgovor) {
     else {
         for (var i=0; i<vrstice.length; i++)
           vrstice[i].stopnja = davcnaStopnja(vrstice[i].izvajalec, vrstice[i].zanr);
-        odgovor.render('seznam', {seznamPesmi: vrstice});
+        odgovor.render('seznam', {sporocilo: "", seznamPesmi: vrstice});
       }
   })
 })
@@ -227,25 +231,26 @@ streznik.post('/prijava', function (zahteva, odgovor) {
 
 // Prikaz strani za prijavo
 streznik.get('/prijava', function(zahteva, odgovor) {
-  vrniStranke(function(napaka1, stranke) {
-      vrniRacune(function(napaka2, racuni) {
-        odgovor.render('prijava', {sporocilo: "", seznamStrank: stranke, seznamRacunov: racuni});  
-      }) 
-    });
+	vrniStranke(function(napaka1, stranke) {
+		vrniRacune(function(napaka2, racuni) {
+			odgovor.render('prijava', {sporocilo: "", seznamStrank: stranke, seznamRacunov: racuni});  
+		}) 
+	});
 })
 
 // Prikaz nakupovalne košarice za stranko
 streznik.post('/stranka', function(zahteva, odgovor) {
-  var form = new formidable.IncomingForm();
-  
-  form.parse(zahteva, function (napaka1, polja, datoteke) {
-    odgovor.redirect('/')
-  });
+	var form = new formidable.IncomingForm();
+	zahteva.session.prijavljen = true;
+	form.parse(zahteva, function (napaka1, polja, datoteke) {
+		odgovor.redirect('/')
+	});
 })
 
 // Odjava stranke
-streznik.post('/odjava', function(zahteva, odgovor) {
-    odgovor.redirect('/prijava') 
+streznik.post('/odjava', function (zahteva, odgovor) {
+	zahteva.session.prijavljen = false;
+	odgovor.redirect('/prijava') 
 })
 
 
