@@ -47,11 +47,11 @@ function davcnaStopnja(izvajalec, zanr) {
 }
 
 // Prikaz seznama pesmi na strani
-streznik.get('/', function (zahteva, odgovor) {
+streznik.get('/', function(zahteva, odgovor) {
 	if (!zahteva.session.prijavljen) {
 		odgovor.redirect('/prijava');
 	}
-	pb.all("SELECT Track.TrackId AS id, Track.Name AS pesem, \
+  pb.all("SELECT Track.TrackId AS id, Track.Name AS pesem, \
           Artist.Name AS izvajalec, Track.UnitPrice * " +
           razmerje_usd_eur + " AS cena, \
           COUNT(InvoiceLine.InvoiceId) AS steviloProdaj, \
@@ -231,26 +231,26 @@ streznik.post('/prijava', function (zahteva, odgovor) {
 
 // Prikaz strani za prijavo
 streznik.get('/prijava', function(zahteva, odgovor) {
-	vrniStranke(function(napaka1, stranke) {
-		vrniRacune(function(napaka2, racuni) {
-			odgovor.render('prijava', {sporocilo: "", seznamStrank: stranke, seznamRacunov: racuni});  
-		}) 
-	});
+  vrniStranke(function(napaka1, stranke) {
+      vrniRacune(function(napaka2, racuni) {
+        odgovor.render('prijava', {sporocilo: "", seznamStrank: stranke, seznamRacunov: racuni});  
+      }) 
+    });
 })
 
 // Prikaz nakupovalne košarice za stranko
 streznik.post('/stranka', function(zahteva, odgovor) {
-	var form = new formidable.IncomingForm();
-	zahteva.session.prijavljen = true;
-	form.parse(zahteva, function (napaka1, polja, datoteke) {
-		odgovor.redirect('/')
-	});
+  var form = new formidable.IncomingForm();
+  zahteva.session.prijavljen = true;
+  form.parse(zahteva, function (napaka1, polja, datoteke) {
+    odgovor.redirect('/')
+  });
 })
 
 // Odjava stranke
-streznik.post('/odjava', function (zahteva, odgovor) {
+streznik.post('/odjava', function(zahteva, odgovor) {
 	zahteva.session.prijavljen = false;
-	odgovor.redirect('/prijava') 
+    odgovor.redirect('/prijava') 
 })
 
 
