@@ -49,12 +49,9 @@ function davcnaStopnja(izvajalec, zanr) {
 // Prikaz seznama pesmi na strani
 streznik.get('/', function (zahteva, odgovor) {
 	if (!zahteva.session.prijavljen) {
-		
 		odgovor.redirect('/prijava');
 	}
-	
-
-  pb.all("SELECT Track.TrackId AS id, Track.Name AS pesem, \
+	pb.all("SELECT Track.TrackId AS id, Track.Name AS pesem, \
           Artist.Name AS izvajalec, Track.UnitPrice * " +
           razmerje_usd_eur + " AS cena, \
           COUNT(InvoiceLine.InvoiceId) AS steviloProdaj, \
@@ -72,7 +69,7 @@ streznik.get('/', function (zahteva, odgovor) {
     else {
         for (var i=0; i<vrstice.length; i++)
           vrstice[i].stopnja = davcnaStopnja(vrstice[i].izvajalec, vrstice[i].zanr);
-        odgovor.render('seznam', {seznamPesmi: vrstice});
+        odgovor.render('seznam', {sporocilo: "", seznamPesmi: vrstice});
       }
   })
 })
